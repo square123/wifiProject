@@ -3,7 +3,7 @@
 int main(int argc, char** argv )
 {
 	Kinect kinect;  
-	kinect.outfile.open("data.txt",fstream::app);
+	kinect.outfile.open("data.csv",fstream::app);
 	//Mat depthDeNoise(kinect.DepthHeight, kinect.DepthWidth, CV_16UC1);
 	kinect.InitKinect();
 	kinect.InitDepth();
