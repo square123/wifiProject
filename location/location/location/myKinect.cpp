@@ -8,7 +8,19 @@ Kinect::Kinect()
 	colorMat.create( ColorHeight, ColorWidth, CV_8UC4);
 	depthMat16.create(DepthHeight, DepthWidth, CV_16UC1);
 	depthMat8.create(DepthHeight, DepthWidth, CV_8UC1 );
-
+	//showOrbit矩阵初始化
+	double maxDis=cos(-(rotateAngle)/180*PI)*4.5;
+	double maxWid=2*maxDis*tan(35.0/180*PI);
+	double minDis=cos(-(rotateAngle)/180*PI)*0.5;//KinectHeight*tan((60.0+(rotateAngle))/180*PI);
+	double minWid=2*minDis*tan(35.0/180*PI);
+	sOX=int(ceil(maxWid)*100),sOY=int(ceil(maxDis)*100);
+	showOrbit=Mat::zeros(sOY,sOX,CV_8UC3);//背景为全黑
+	//填充白色区域
+	line(showOrbit,Point(sOX/2-(int(maxWid*100)/2),sOY-int(maxDis*100)),Point(sOX/2+(int(maxWid*100)/2),sOY-int(maxDis*100)),Scalar(255,255,255),2,8);
+	line(showOrbit,Point(sOX/2+(int(maxWid*100)/2),sOY-int(maxDis*100)),Point(sOX/2+(int(minWid*100)/2),sOY-int(minDis*100)),Scalar(255,255,255),2,8);
+	line(showOrbit,Point(sOX/2+(int(minWid*100)/2),sOY-int(minDis*100)),Point(sOX/2-(int(minWid*100)/2),sOY-int(minDis*100)),Scalar(255,255,255),2,8);
+	line(showOrbit,Point(sOX/2-(int(minWid*100)/2),sOY-int(minDis*100)),Point(sOX/2-(int(maxWid*100)/2),sOY-int(maxDis*100)),Scalar(255,255,255),2,8);
+	floodFill(showOrbit,Point(sOX/2,sOY/2),Scalar(255,255,255));
 	saveTmpIntClr=0;
 	saveTmpIntDep=0;
 }
@@ -229,7 +241,9 @@ void Kinect::bodyLocation()
 	color[4] = cv::Vec3b( 255,   0, 255 );
 	color[5] = cv::Vec3b(   0, 255, 255 );
 	pBodyFrame = nullptr;
-	showOrbit.create(500,500,CV_8UC4);
+	time_t systime=time(NULL);//加入系统时间
+	char timeFix[16];
+	strftime(timeFix,sizeof(timeFix),"%Y%m%d%H%M%S",localtime(&systime));//时间修复
 	hResult = pBodyReader->AcquireLatestFrame( &pBodyFrame );
 	if( SUCCEEDED( hResult ) )
 	{
@@ -243,24 +257,21 @@ void Kinect::bodyLocation()
 					Joint joint[JointType::JointType_Count];   //取得人体Joint(关节)。JointType是一个枚举类型，不同位置的关节点都是不同的标号表示的。count是一个数值25。
 					hResult = pBody[ count ]->GetJoints( JointType::JointType_Count, joint );  //取得人体Joint(关节)。
 					//cout<<"索引为"<<count<<"的坐标： "<<"X="<<joint[ JointType_SpineMid].Position.X<<" "<<"Y="<<joint[ JointType_SpineMid].Position.Y<<" "<<"Z="<<joint[ JointType_SpineMid].Position.Z<<endl;
-
-					//坐标变换
+					//坐标变换,只会在x方向上有角度
 					float xx,yy,zz;
 					xx=joint[ JointType_SpineMid].Position.X;
-					yy=(cos(-27.0/180*PI)*joint[ JointType_SpineMid].Position.Y+sin(-27.0/180*PI)*joint[JointType_SpineMid].Position.Z);
-					zz=((-1)*sin(-27.0/180*PI)*joint[ JointType_SpineMid].Position.Y+cos(-27.0/180*PI)*joint[ JointType_SpineMid].Position.Z);
-					cout<<"x="<<xx<<"z="<<zz<<endl;
-					outfile<<count<<","<<xx<<","<<yy<<","<<zz<<endl;
+					yy=(cos(rotateAngle/180*PI)*joint[ JointType_SpineMid].Position.Y+sin(rotateAngle/180*PI)*joint[JointType_SpineMid].Position.Z);
+					zz=((-1)*sin(rotateAngle/180*PI)*joint[ JointType_SpineMid].Position.Y+cos(rotateAngle/180*PI)*joint[ JointType_SpineMid].Position.Z);
+					cout<<timeFix<<" "<<"x="<<-xx<<"z="<<(zz-(sOY/200))<<endl;
+					outfile<<timeFix<<","<<count<<","<<-xx<<","<<(zz-(sOY/200))<<endl;
 					//坐标显示部分
 					float a,b;
-					//a=joint[ JointType_SpineMid].Position.X*100;
-					//b=joint[ JointType_SpineMid].Position.Z*100;
 					a=xx*100;
 					b=zz*100;
 					Point center;
-					center.x=250-int(a);
-					center.y=500-int(b);
-					circle(showOrbit,center,3,static_cast< cv::Scalar >( color[count] ),-1,CV_AA);
+					center.x=sOX/2-int(a);
+					center.y=sOY-int(b);
+					circle(showOrbit,center,1,static_cast< cv::Scalar >( color[count] ),-1,CV_AA);
 				}
 			}
 		}
