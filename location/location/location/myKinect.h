@@ -1,19 +1,21 @@
 #ifndef MYKINECT_H
 #define MYKINECT_H
 #include <opencv2/opencv.hpp>
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <iostream>
 #include <strsafe.h>
 #include <string>
 #include <kinect.h>
 #include<fstream>
 #include<math.h>
+#include <time.h>
 
 #define FilePath "H://testColor//"
 #define saveDepth 1
 #define saveColor 2
 #define PI 3.1415926
+#define rotateAngle 0.0 //Ðý×ª½Ç¶È
 using namespace cv;
 using namespace std;
 
@@ -72,6 +74,7 @@ public:
 	~Kinect();
 
 private:
+	int sOX,sOY;
 	IKinectSensor* pSensor ;
 	IColorFrameSource* pColorSource;
 	IColorFrameReader* pColorReader;
