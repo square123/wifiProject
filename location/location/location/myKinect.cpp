@@ -231,6 +231,14 @@ void Kinect::kinectSaveAll(string savePath)
 	}
 }
 
+void Kinect::dataProcess(double x,double y)
+{
+	double r3=sqrt((x-0.42)*(x-0.42)+(y+1.39)*(y+1.39));
+	double r2=sqrt((x-1.13)*(x-1.13)+(y-2.04)*(y-2.04));
+	double r1=sqrt((x+2.05)*(x+2.05)+(y-1.7)*(y-1.7));
+
+}
+
 void Kinect::bodyLocation()
 {
 	cv::Vec3b color[BODY_COUNT];      //#define BODY_COUNT=6
@@ -258,12 +266,16 @@ void Kinect::bodyLocation()
 					hResult = pBody[ count ]->GetJoints( JointType::JointType_Count, joint );  //取得人体Joint(关节)。
 					//cout<<"索引为"<<count<<"的坐标： "<<"X="<<joint[ JointType_SpineMid].Position.X<<" "<<"Y="<<joint[ JointType_SpineMid].Position.Y<<" "<<"Z="<<joint[ JointType_SpineMid].Position.Z<<endl;
 					//坐标变换,只会在x方向上有角度
-					float xx,yy,zz;
+					double xx,yy,zz;
 					xx=joint[ JointType_SpineMid].Position.X;
 					yy=(cos(rotateAngle/180*PI)*joint[ JointType_SpineMid].Position.Y+sin(rotateAngle/180*PI)*joint[JointType_SpineMid].Position.Z);
 					zz=((-1)*sin(rotateAngle/180*PI)*joint[ JointType_SpineMid].Position.Y+cos(rotateAngle/180*PI)*joint[ JointType_SpineMid].Position.Z);
 					cout<<timeFix<<" "<<"x="<<-xx<<"z="<<(zz-(sOY/200))<<endl;
-					outfile<<timeFix<<","<<count<<","<<-xx<<","<<(zz-(sOY/200))<<endl;
+					double r4=sqrt((-xx+0.29851)*(-xx+0.29851)+((zz-(sOY/200))+1.788921)*((zz-(sOY/200))+1.788921));
+					double r3=sqrt((-xx-0.708444)*(-xx-0.708444)+((zz-(sOY/200))+1.761442)*((zz-(sOY/200))+1.761442));
+					double r2=sqrt((-xx-1.42421)*(-xx-1.42421)+((zz-(sOY/200))-2.18921)*((zz-(sOY/200))-2.18921));
+					double r1=sqrt((-xx+2.1276)*(-xx+2.1276)+((zz-(sOY/200))-2.12288)*((zz-(sOY/200))-2.12288));
+					outfile<<timeFix<<","<<count<<","<<r1<<","<<r2<<","<<r3<<","<<r4<<endl;
 					//坐标显示部分
 					float a,b;
 					a=xx*100;

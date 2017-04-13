@@ -4,13 +4,11 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <iostream>
-#include <strsafe.h>
 #include <string>
 #include <kinect.h>
 #include<fstream>
 #include<math.h>
 #include <time.h>
-
 #define FilePath "H://testColor//"
 #define saveDepth 1
 #define saveColor 2
@@ -42,7 +40,6 @@ public:
 	int saveTmpIntDep;
 	char saveTmpStrClr[1000];
 	int saveTmpIntClr;
-
 	Mat depthMat8;
 	Mat depthMat16;
 	Mat colorMat;
@@ -66,6 +63,7 @@ public:
 	void kincetSave(Mat a,string savePath,int opt);//有两种模式选择，保存彩色或深度
 	void kinectSaveAll(string savePath);//同时保存彩色和深度
 	void bodyLocation();
+	void dataProcess(double x,double y);
 	//旋转因子转换函数 
 	//画出区域检测函数
 	//时间输出函数
