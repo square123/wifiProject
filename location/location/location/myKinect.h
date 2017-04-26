@@ -13,6 +13,7 @@
 #define saveDepth 1
 #define saveColor 2
 #define PI 3.1415926
+#define maxStore 30
 #define rotateAngle 0.0 //旋转角度
 using namespace cv;
 using namespace std;
@@ -26,7 +27,6 @@ inline void SafeRelease( Interface *& pInterfaceToRelease )
 		pInterfaceToRelease = NULL;
 	}
 }
-
 
 class Kinect
 {
@@ -63,7 +63,10 @@ public:
 	void kincetSave(Mat a,string savePath,int opt);//有两种模式选择，保存彩色或深度
 	void kinectSaveAll(string savePath);//同时保存彩色和深度
 	void bodyLocation();
-	void dataProcess(double x,double y);
+	void kinectDataRawProecess(char dataTime[14],int BIndex,double r1,double r2,double r3,double r4);
+	void kinectDataProProecess();
+	int charTimeGetSecond(char ttt[14]);//获得得到数据的后两位
+	//void dataProcess(double x,double y);
 	//旋转因子转换函数 
 	//画出区域检测函数
 	//时间输出函数
@@ -86,5 +89,19 @@ private:
 	IBodyFrameReader* pBodyReader;
 	IBodyFrame* pBodyFrame;
 	ICoordinateMapper* pCoordinateMapper;
+	time_t processIndex;
+	struct KinectDataRaw //获得的Kinect元素
+	{
+		char Timestamp[14];
+		double r[4];//记录距离信息
+	}kinectTimeRaw[60][BODY_COUNT][maxStore];//用来存储按照时间整合后的kinect数据
+	int kinectTIIndex[60][BODY_COUNT];//存储上述记录的索引
+
+	//struct KinectDataPro //取平均的Kinect数据
+	//{
+	//	char Timestamp[14];
+	//	double r[4];//记录距离信息
+	//}kinectTimeInt[60][BODY_COUNT];//用来存储按照时间整合后的kinect数据
+
 };
 #endif

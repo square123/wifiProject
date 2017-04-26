@@ -1,5 +1,13 @@
 #include "myKinect.h"
 
+#define r1x (-2.29144)
+#define r1z (2.12263)
+#define r2x (1.25144)
+#define r2z (2.32463)
+#define r3x (0.518092)
+#define r3z (-1.182477)
+#define r4x (-0.00761917)
+#define r4z (-1.50423)
 Kinect::Kinect()  
 {
 	pColorFrame = nullptr;
@@ -23,6 +31,10 @@ Kinect::Kinect()
 	floodFill(showOrbit,Point(sOX/2,sOY/2),Scalar(255,255,255));
 	saveTmpIntClr=0;
 	saveTmpIntDep=0;
+	processIndex=0;
+	memset(kinectTimeRaw,0,sizeof(kinectTimeRaw));//如果系统崩溃，可能和这个语句有关
+	//memset(kinectTimeInt,0,sizeof(kinectTimeInt));//如果系统崩溃，可能和这个语句有关
+	memset(kinectTIIndex,0,sizeof(kinectTIIndex));//如果系统崩溃，可能和这个语句有关
 }
 
 Kinect::~Kinect()
@@ -59,6 +71,8 @@ HRESULT Kinect::InitKinect()
 		cerr <<"Error:IKinectSensor::Open()" <<endl;
 		return -1;
 	}
+	time_t syscTimee=time(NULL);	//这里只执行一次，后续就不需要再操作了
+	processIndex=syscTimee+4;//因为是要滞后处理，所以要将处理的标志位滞后，具体的滞后时间参数可以修改
 }
 
 HRESULT Kinect::InitColor()//必须先InitKinect()
@@ -231,13 +245,13 @@ void Kinect::kinectSaveAll(string savePath)
 	}
 }
 
-void Kinect::dataProcess(double x,double y)
-{
-	double r3=sqrt((x-0.42)*(x-0.42)+(y+1.39)*(y+1.39));
-	double r2=sqrt((x-1.13)*(x-1.13)+(y-2.04)*(y-2.04));
-	double r1=sqrt((x+2.05)*(x+2.05)+(y-1.7)*(y-1.7));
-
-}
+//void Kinect::dataProcess(double x,double y)
+//{
+//	double r3=sqrt((x-0.42)*(x-0.42)+(y+1.39)*(y+1.39));
+//	double r2=sqrt((x-1.13)*(x-1.13)+(y-2.04)*(y-2.04));
+//	double r1=sqrt((x+2.05)*(x+2.05)+(y-1.7)*(y-1.7));
+//
+//}
 
 void Kinect::bodyLocation()
 {
@@ -271,11 +285,18 @@ void Kinect::bodyLocation()
 					yy=(cos(rotateAngle/180*PI)*joint[ JointType_SpineMid].Position.Y+sin(rotateAngle/180*PI)*joint[JointType_SpineMid].Position.Z);
 					zz=((-1)*sin(rotateAngle/180*PI)*joint[ JointType_SpineMid].Position.Y+cos(rotateAngle/180*PI)*joint[ JointType_SpineMid].Position.Z);
 					cout<<timeFix<<" "<<"x="<<-xx<<"z="<<(zz-(sOY/200))<<endl;
-					double r4=sqrt((-xx+0.29851)*(-xx+0.29851)+((zz-(sOY/200))+1.788921)*((zz-(sOY/200))+1.788921));
-					double r3=sqrt((-xx-0.708444)*(-xx-0.708444)+((zz-(sOY/200))+1.761442)*((zz-(sOY/200))+1.761442));
-					double r2=sqrt((-xx-1.42421)*(-xx-1.42421)+((zz-(sOY/200))-2.18921)*((zz-(sOY/200))-2.18921));
-					double r1=sqrt((-xx+2.1276)*(-xx+2.1276)+((zz-(sOY/200))-2.12288)*((zz-(sOY/200))-2.12288));
-					outfile<<timeFix<<","<<count<<","<<r1<<","<<r2<<","<<r3<<","<<r4<<endl;
+					double r4=sqrt((-xx-r4x)*(-xx-r4x)+((zz-(sOY/200))-r4z)*((zz-(sOY/200))-r4z));
+					double r3=sqrt((-xx-r3x)*(-xx-r3x)+((zz-(sOY/200))-r3z)*((zz-(sOY/200))-r3z));
+					double r2=sqrt((-xx-r2x)*(-xx-r2x)+((zz-(sOY/200))-r2z)*((zz-(sOY/200))-r2z));
+					double r1=sqrt((-xx-r1x)*(-xx-r1x)+((zz-(sOY/200))-r1z)*((zz-(sOY/200))-r1z));
+					//坐标输出部分
+						//数据处理部分
+					kinectDataRawProecess(timeFix,count,r1,r2,r3,r4);
+					if (systime>=processIndex)//进行插空操作 最终达到循环操作,改成大于等于是因为数据有可能存在跳秒
+					{
+						kinectDataProProecess();
+						processIndex++;
+					}
 					//坐标显示部分
 					float a,b;
 					a=xx*100;
@@ -292,4 +313,61 @@ void Kinect::bodyLocation()
 		}
 	}
 	SafeRelease( pBodyFrame );  //这个frame一定要释放，不然无法更新	
+}
+
+void Kinect::kinectDataRawProecess(char dataTime[14],int BIndex,double r1,double r2,double r3,double r4)
+{
+	int second=charTimeGetSecond(dataTime);
+	memcpy(kinectTimeRaw[second][BIndex][kinectTIIndex[second][BIndex]].Timestamp,dataTime,sizeof(char)*14);
+	kinectTimeRaw[second][BIndex][kinectTIIndex[second][BIndex]].r[0]=r1;
+	kinectTimeRaw[second][BIndex][kinectTIIndex[second][BIndex]].r[1]=r2;
+	kinectTimeRaw[second][BIndex][kinectTIIndex[second][BIndex]].r[2]=r3;
+	kinectTimeRaw[second][BIndex][kinectTIIndex[second][BIndex]].r[3]=r4;
+	kinectTIIndex[second][BIndex]++;
+}
+
+void Kinect::kinectDataProProecess()
+{
+	char timeFixed[16];
+	time_t processIndexInit=processIndex-4;
+	strftime(timeFixed,sizeof(timeFixed),"%Y%m%d%H%M%S",localtime(&processIndexInit));
+	int second=charTimeGetSecond(timeFixed);
+	double r0Sum=0.0,r2Sum=0.0,r3Sum=0.0,r1Sum=0.0;
+	for (int i=0;i<BODY_COUNT;i++)//每个bodycount
+	{
+		if (kinectTIIndex[second][i]!=0)//如果空不操作
+		{
+			for (int j=0;j<kinectTIIndex[second][i];j++)//计算变量
+			{
+				r0Sum+=kinectTimeRaw[second][i][j].r[0];
+				r1Sum+=kinectTimeRaw[second][i][j].r[1];
+				r2Sum+=kinectTimeRaw[second][i][j].r[2];
+				r3Sum+=kinectTimeRaw[second][i][j].r[3];
+			}
+			//可能需要一个新的数据结构存储，但现在看来似乎并不需要
+			//memcpy(kinectTimeInt[second][i].Timestamp,kinectTimeRaw[second][i][0].Timestamp,sizeof(char)*14);
+			//kinectTimeInt[second][i].r[0]=r0Sum/kinectTIIndex[second][i];
+			//kinectTimeInt[second][i].r[1]=r1Sum/kinectTIIndex[second][i];
+			//kinectTimeInt[second][i].r[2]=r2Sum/kinectTIIndex[second][i];
+			//kinectTimeInt[second][i].r[3]=r3Sum/kinectTIIndex[second][i];
+			double r0ave=r0Sum/kinectTIIndex[second][i];
+			double r1ave=r1Sum/kinectTIIndex[second][i];
+			double r2ave=r2Sum/kinectTIIndex[second][i];
+			double r3ave=r3Sum/kinectTIIndex[second][i];
+			//文件输出操作
+			outfile<<timeFixed<<","<<i<<","<<r0ave<<","<<r1ave<<","<<r2ave<<","<<r3ave<<endl;
+		}
+	}
+	//清空操作
+	memset(kinectTimeRaw[second],0,sizeof(KinectDataRaw)*BODY_COUNT*maxStore);
+	memset(kinectTIIndex[second],0,sizeof(int)*BODY_COUNT);
+}
+
+int Kinect::charTimeGetSecond(char ttt[14])//获得得到数据的后两位
+{
+	int result;
+	char second[2];
+	memcpy(second,ttt+12,sizeof(char)*2);
+	result=atoi(second);
+	return result;
 }
