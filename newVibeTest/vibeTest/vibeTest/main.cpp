@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
 	//capture.open("4.mp4");
 
 	//vibe部分
-	Mat  gray, mask;
+	Mat  mask;
 	ViBe_BGS Vibe_Bgs;
 	int count = 0;
 
@@ -34,10 +34,14 @@ int main(int argc, char* argv[])
 	//cv::BackgroundSubtractorMOG mog(5,5,0.7,10);
 	//Mat foregroud,background;
 
+	//opticalflow 部分（不好用）
+	//Mat prvGray, optFlow ,absoluteFlow, img_for_show;
+
 	//图像处理部分
 	Mat element=getStructuringElement(MORPH_ELLIPSE,Size(3,3));
 	
-	while (1)
+
+	while (1)//处理部分
 	{	
 		Mat frame;
 		////kinect部分
@@ -53,11 +57,12 @@ int main(int argc, char* argv[])
 		if (frame.empty())
 			break;
 		gammaCorrection (frame, 0.8);//只是调整了一下整体亮度，并没有很好的效果
-        Mat out,outed;
+        Mat  gray,out,outed;
 		//medianBlur(frame,out,7);
 		cvtColor(frame, outed, CV_RGB2GRAY);
 		//equalizeHist(outed,out);
 		bilateralFilter(outed,gray,7,14,-1);
+		imshow("input",gray);	
 
 		////GMM部分
 		//mog(gray,foregroud,0.001);
@@ -71,6 +76,7 @@ int main(int argc, char* argv[])
 			Vibe_Bgs.init(gray);
 			Vibe_Bgs.processFirstFrame(gray);
 			cout<<"Init complete!"<<endl;
+			
 		}
 		else
 		{
@@ -81,19 +87,29 @@ int main(int argc, char* argv[])
 			fillHole(mask,masked);
 			erode(masked,masked,element);
 			dilate(masked,masked,element);
+			dilate(masked,masked,element);
+			dilate(masked,masked,element);
 			imshow("mask", masked);
+			cout<<count<<endl;
 		}
 
-		imshow("input",gray);	
+		////opticalflow 部分(不好用)
+		//if (prvGray.data){  
+		//	calcOpticalFlowFarneback(prvGray, gray, optFlow, 0.5, 3, 15, 3, 5, 1.2, 0); //使用论文参数      
+		//	compute_absolute_mat(optFlow,absoluteFlow);
+		//	normalize(absoluteFlow, img_for_show, 0, 255, NORM_MINMAX, CV_8UC1);  
+		//	imshow("opticalFlow", img_for_show);  
+		//}  
+		//cv::swap(prvGray, gray);  
 
 		////GMM显示部分
-		Mat maskeded;
+		//Mat maskeded;
 		//fillHole(foregroud,maskeded);
 		//erode(maskeded,maskeded,element);
 		//dilate(maskeded,maskeded,element);
 		//imshow("GMM foreground",maskeded);
 
-		////合并部分
+		////vibe和GMM合并部分
 		//Mat mergeMat;
 		//if (count != 1)//要注意第一位时没有图的
 		//{
@@ -101,6 +117,25 @@ int main(int argc, char* argv[])
 		//	imshow("merge",mergeMat);
 		//}
 		
+		//从检测到120帧之后才开始查找
+		if(count>=120)//这个应该是需要根据实际情况能修改的
+		{
+			count--;
+			//这里才开始进行函数处理，不然连通区域太多了
+			Mat selectedMat;
+			selectArea(masked,selectedMat,80,10000);//通过函数对一些连通域小的进行筛选
+			imshow("dd",selectedMat);
+	//算法后续步骤：
+			//将连通区域用矩形表示，将区域用矩形填充
+			//再将连通区域合并
+			//再次将区域变换成矩形
+			//考虑一种方法，将连通区域标记
+			//下幅图像标记引用上幅图像的标记
+			//如果没有标记则重新赋值一个新的标记
+			//需要有一个比较好的函数
+			//当标记已经不存在时，要想办法去重
+		}
+
 		if ( cvWaitKey(1) == 'q' )
 			break;
 	}

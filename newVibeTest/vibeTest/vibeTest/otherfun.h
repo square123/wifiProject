@@ -18,7 +18,7 @@ void fillHole(const Mat srcBw, Mat &dstBw)//参考网上的填充函数，很巧妙
 	dstBw = srcBw | (~cutImg);
 }
 
-void  BwLabel( const Mat &bwImg, Mat &labImg )  //参考网上的连通区域标记函数
+void  bwLabel( const Mat &bwImg, Mat &labImg )  //参考网上的连通区域标记函数
 {  
 	assert( bwImg.type()==CV_8UC1 );  
 	labImg.create( bwImg.size(), CV_32SC1 ); 
@@ -119,3 +119,49 @@ void bwLabelNext(Mat &src)//作为上述连通区域标记的后续处理
 	}
 }
 
+
+void selectArea(Mat &src,Mat &dst, int minNum,int maxNum)//选择合适范围的连通区域
+{
+	vector<vector<Point>> contours;  
+	findContours(src,contours,RETR_EXTERNAL,CHAIN_APPROX_NONE); 
+	if(contours.size()<1)  //去除边界值
+	{
+		dst=Mat::zeros(src.size(),CV_8UC1);
+	}else
+	{
+		dst=src.clone();
+		for (int i = 0; i < contours.size(); i++)
+		{
+			if (maxNum>0?(contourArea(contours[i])>maxNum||contourArea(contours[i])<minNum):(contourArea(contours[i])<minNum))
+			{
+				drawContours(dst,contours,i,0,CV_FILLED);
+			} 
+			else
+			{
+				drawContours(dst,contours,i,255,CV_FILLED);
+			}
+		}
+	}
+
+}
+
+void compute_absolute_mat(const Mat& in, Mat & out)  //光流法用
+{  
+	if (out.empty()){  
+		out.create(in.size(), CV_32FC1);  
+	}  
+	const Mat_<Vec2f> _in = in;  
+	for (int i = 0; i < in.rows; ++i){  
+		float *data = out.ptr<float>(i);  
+		for (int j = 0; j < in.cols; ++j){  
+			double s = _in(i, j)[0] * _in(i, j)[0] + _in(i, j)[1] * _in(i, j)[1];  
+			if (s>1){  
+				data[j] = std::sqrt(s);  
+			}  
+			else{  
+				data[j] = 0.0;  
+			}  
+
+		}  
+	}  
+}  
