@@ -142,7 +142,28 @@ void selectArea(Mat &src,Mat &dst, int minNum,int maxNum)//Ñ¡ÔñºÏÊÊ·¶Î§µÄÁ¬Í¨ÇøÓ
 			}
 		}
 	}
+}
 
+void hullArea(Mat &src,Mat &dst) //ÓÃÀ´½«Á¬Í¨ÇøÓòÓÃÍ¹°üºÏ²¢
+{
+	vector<vector<Point>> contours;  
+	findContours(src,contours,RETR_EXTERNAL,CHAIN_APPROX_NONE); 
+	vector<vector<Point>> hull(contours.size());  
+	for (unsigned int i=0;i<contours.size();i++)
+	{
+		convexHull(Mat(contours[i]),hull[i],false);
+	}
+	if(contours.size()<1)  //È¥³ı±ß½çÖµ
+	{
+		dst=Mat::zeros(src.size(),CV_8UC1);
+	}else
+	{
+		dst=src.clone();
+		for (int i = 0; i < contours.size(); i++)
+		{
+			drawContours(dst,hull,i,255,CV_FILLED);
+		}
+	}
 }
 
 void compute_absolute_mat(const Mat& in, Mat & out)  //¹âÁ÷·¨ÓÃ
