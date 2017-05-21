@@ -1,8 +1,17 @@
 #pragma once
 #include <iostream>
 #include "opencv2/opencv.hpp"
+#include <vector>
 
 using namespace cv;
+
+struct bwMix //¶¨ÒåÁ¬Í¨ÇøÓòµÄ½á¹¹Ìå
+{
+	Rect bwRect;//¾ØĞÎÇøÓò
+	int markLabel;//±ê¼Ç
+	Mat bwEdge;//±ßÔµĞÅÏ¢
+	Point center;//Í¼ÏñµÄÖØĞÄ
+};
 
 void fillHole(const Mat srcBw, Mat &dstBw)//²Î¿¼ÍøÉÏµÄÌî³äº¯Êı£¬ºÜÇÉÃî
 {
@@ -146,7 +155,7 @@ void selectArea(Mat &src,Mat &dst, int minNum,int maxNum)//Ñ¡ÔñºÏÊÊ·¶Î§µÄÁ¬Í¨ÇøÓ
 
 void hullArea(Mat &src,Mat &dst) //ÓÃÀ´½«Á¬Í¨ÇøÓòÓÃÍ¹°üºÏ²¢
 {
-	vector<vector<Point>> contours;  
+	vector<vector<Point>> contours;  //Í¨¹ı¸Ã·½·¨Ò²ÊÇ¿ÉÒÔµÄ£¬Æä¾ØÕó³äµ±ÁËÔ­À´ÀàËÆvector<Point>µÄĞ§¹û£¬ÊÇË«Í¨µÀ¾ØÕó
 	findContours(src,contours,RETR_EXTERNAL,CHAIN_APPROX_NONE); 
 	vector<vector<Point>> hull(contours.size());  
 	for (unsigned int i=0;i<contours.size();i++)
@@ -161,10 +170,91 @@ void hullArea(Mat &src,Mat &dst) //ÓÃÀ´½«Á¬Í¨ÇøÓòÓÃÍ¹°üºÏ²¢
 		dst=src.clone();
 		for (int i = 0; i < contours.size(); i++)
 		{
-			drawContours(dst,hull,i,255,CV_FILLED);
+			drawContours(dst,hull,i,(255),CV_FILLED);
 		}
 	}
 }
+
+//¹¹½¨½á¹¹ÌåµÄº¯Êı
+void getBwMix(Mat &src,vector<bwMix> &dst)
+{
+	vector<Mat> contours; //Õâ¸öµØ·½ºÃºÃË¼¿¼ÏÂ
+	findContours(src,contours,RETR_EXTERNAL,CHAIN_APPROX_NONE); 
+	if(contours.size()>=1)  //È¥³ı±ß½çÖµ
+	{
+		for (int i = 0; i < contours.size(); i++)
+		{
+			bwMix temp;
+			temp.markLabel=i;
+			temp.bwEdge=contours[i];
+			temp.bwRect=boundingRect(contours[i]);
+			//Ìí¼ÓÒ»¸ö¹¹½¨ÖØĞÄµÄº¯Êı
+			Moments m=moments(contours[i],false);
+			temp.center.x=m.m10/m.m00;
+			temp.center.y=m.m01/m.m00;
+			cout<<temp.center<<endl;
+			dst.push_back(temp);
+		}
+	}
+}
+
+//¸ù¾İ½á¹¹Ìå×ª»»³É²ÊÉ«¾ØÕó//ÑÕÉ«´¦Àíº¯Êı ½øĞĞÁĞ±í»¯£¬¿ØÖÆ×î¶àµÄ¼ì²âÈËÊı£¬²»¿¼ÂÇÈË»á³öÏÖ¸îÁÑµÄºÛ¼£ ¶¨Òå×î¶àµÄ¼ì²âµÄÈËÊıÎª10ÈË£¬Ò²ÊÇÍ¨¹ı½á¹¹ÌåÀ´´«µİÍ¼ÏñĞÅÏ¢
+void bwMixToColorMat(vector<bwMix> &src,Mat &dst)
+{
+	Scalar globalColor[10]; //¹¹½¨ÑÕÉ«±í
+	globalColor[0] = Scalar( 67, 128, 6 );
+	globalColor[1] = Scalar( 84, 80, 153 );
+	globalColor[2] = Scalar( 57, 60, 79 );
+	globalColor[3] = Scalar( 255, 255, 0 );
+	globalColor[4] = Scalar( 61, 63, 17 );
+	globalColor[5] = Scalar( 155, 175, 131 );
+	globalColor[6] = Scalar( 101, 67, 254 );
+	globalColor[7] = Scalar( 154, 157, 252 );
+	globalColor[8] = Scalar( 173, 205, 249 );
+	globalColor[9] = Scalar( 169, 200, 200 );
+	//dst=Mat::zeros(dstrows,dstcols,CV_8UC3);
+	if (src.size()>=1&&src.size()<11)
+	{
+		for (int i=0;i<src.size();i++)
+		{
+			vector<Mat> tempMat;
+			tempMat.push_back(src[i].bwEdge);//×öÁË×ª´æ£¬½«±äÁ¿±ä³ÉÁËÒ»¸öÕûÌå
+			drawContours(dst,tempMat,0,globalColor[src[i].markLabel],CV_FILLED,8);//½«¶ÔÓ¦µÄ±êÇ©µÄÑÕÉ«Ìî³ä
+		}
+	}
+}
+
+//¾ØĞÎÇøÓò±È½Ïº¯Êı
+float rectOverlap(const Rect & preBox,const Rect & nowBox) //Ö±½ÓÊ¹ÓÃRectº¯Êı ºÃÏñÔİÊ±Ã»É¶ÓÃ
+{ 
+	Rect rect=preBox & nowBox;//È¡Á½¸ö¾ØÕóµÄ½»¼¯
+	if (preBox.area()!=0)
+	{
+		return rect.area()/preBox.area();
+	}else
+	{
+		return 0.0;
+	}
+}
+
+
+//ÓÃ¾ÉµÄ¾ØÕóÍ¼Ïñ±êºÅ£¬¸üĞÂĞÂµÄ±êºÅµÄº¯Êı ÈÃÁ¬ĞøµÄÖ¡overlap¸üĞÂ£¬Í¨¹ı½á¹¹ÌåÏòÁ¿À´´«µİÍ¼ÏñµÄĞÅÏ¢,µ±Ã»ÓĞ±êºÅÊ±£¬Ïë°ì·¨È¥¸³Öµ£¬²»ÄÜ³¬¹ı×î´óµÄÊıÁ¿ÏÈ¼Ù¶¨ÊÇ10¸ö
+//ÕâÀïÏÈ²»¿¼ÂÇÖĞ¶ÏµÄÇé¿ö£¬Èç¹û´æÔÚÖĞ¶ÏµÄÇé¿ö£¬Ó¦¸ÃÒªÓĞÒ»¸ö»º³åµÄ¸Ğ¾õ£¬±ÈÈç¶à´ÎÈ¡Æ½¾ù£¬¸Ğ¾õ¹¹ÔìÒ»¸ö±í±È½ÏºÃ£¬ÕâÑùË¼Â·±È½ÏÇåÎú
+void renewVec(vector<bwMix> &src, vector<bwMix> &dst)
+{
+	//¹¹½¨Ò»¸ö±í
+	int m=src.size();
+	int n=dst.size();
+	//¹¹½¨Ò»Î¬Êı×é£¬Ìæ´ú¶şÎ¬Êı×é
+
+	cv::Mat table(m,n,CV_32FC1,0.0);
+
+
+}
+
+
+//¹ì¼£¼ÆËã¹«Ê½ ¸ù¾İÏàÁÚµÄÖØĞÄÀ´Êä³ö¹ì¼£ ĞèÒª¿¼ÂÇµ½ÖĞ¶ÏµÄÎÊÌâ£¬ÒòÎª¹ì¼£»á³öÏÖÖĞ¶Ï£¬µ±ÖĞ¶ÏÊ±ÒªÊä³ö¹ì¼££¬ÒÔºóÔÙ¿¼ÂÇ,ÔÚ¹ì¼£ÖĞÓ¦¸Ã¼ÓÈëÂË²¨µÄ¹ı³Ì£¬ÒòÎªÍ¼ÏñÔÚÔË¶¯¹ı³ÌÖĞÍ¼Ïñ»á·¢Éú±ä»¯
+
 
 void compute_absolute_mat(const Mat& in, Mat & out)  //¹âÁ÷·¨ÓÃ
 {  

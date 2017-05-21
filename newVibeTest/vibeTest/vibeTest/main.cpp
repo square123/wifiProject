@@ -8,10 +8,10 @@ using namespace cv;
 using namespace std;
 
 //还需要完成连通区域的连续标记部分，可能高斯模型比较慢，暂时先不考虑这个。合并也再说
-//先通过判断连通区域标记的个数来进行划分，同时要想办法提出一个阈值来剔除不合理的元素，比如较大和较小。
 //通过彩色模型或许程序会比较慢，看看能不能通过连续的情况实现。这个是整个程序的关键，或许有现成的跟踪函数
+//这个是重头，完成了连续标记
 
-//这个是重头，完成了连续标记，
+
 
 int main(int argc, char* argv[])
 {
@@ -23,7 +23,8 @@ int main(int argc, char* argv[])
 
 	//video获取部分
 	VideoCapture capture;
-	capture.open("4.mp4");
+	//capture.open("bodyvideo1.avi");
+	capture.open("4ren.mp4");
 
 	//vibe部分
 	Mat  mask;
@@ -40,23 +41,27 @@ int main(int argc, char* argv[])
 	//图像处理部分
 	Mat element=getStructuringElement(MORPH_ELLIPSE,Size(3,3));
 	
+	//overlap算法部分
 
+	
 	while (1)//处理部分
 	{	
 		Mat frame;
+		vector<bwMix> picBwMix;
 		////kinect部分
 		//kinect.colorProcess();
-		//resize(kinect.colorHalfSizeMat,frame,Size(),0.5,0.5);
+		//resize(kinect.colorHalfSizeMat,frame,Size(),0.3,0.3);
 
-		////摄像头获取数据部分
+		////获取已保存的数据部分
 		Mat framed;
-		capture >> framed;
-		resize(framed,frame,Size(),0.3,0.3);
+		capture>>framed;
+		resize(framed,frame,Size(),0.5,0.5);
+		imshow("读视频",frame);
 
 		////图像预处理部分
-		if (framed.empty())
+		if (frame.empty())
 			break;
-		gammaCorrection (frame, 0.8);//只是调整了一下整体亮度，并没有很好的效果
+		//gammaCorrection (frame, 0.8);//只是调整了一下整体亮度，并没有很好的效果 而且加入这个速度会变得很慢
         Mat  gray,out,outed;
 		//medianBlur(frame,out,7);
 		cvtColor(frame, outed, CV_RGB2GRAY);
@@ -68,7 +73,7 @@ int main(int argc, char* argv[])
 		//mog(gray,foregroud,0.001);
 		////mog.getBackgroundImage(background);//加入这句会出bug
 
-		////vibe部分
+		//vibe部分
 		count++;
 		Mat masked;
 		if (count == 1)
@@ -117,13 +122,13 @@ int main(int argc, char* argv[])
 		//	imshow("merge",mergeMat);
 		//}
 		
-		//从检测到120帧之后才开始查找，需要这个时间来初始化
-		if(count>=120)//这个应该是需要根据实际情况能修改的
+		//从检测到120帧之后才开始查找，需要这个时间来初始化图像，不然会出现ghost现象
+		if(count>=20)//这个应该是需要根据实际情况能修改的
 		{
 			count--;
 			//这里才开始进行函数处理，不然连通区域太多了
 			Mat selectedMat;
-			selectArea(masked,selectedMat,80,10000);//通过函数对一些连通域小的进行筛选  以后可以根据实地判断筛选 针对稀疏人物目标的跟踪
+			selectArea(masked,selectedMat,180,4000);//通过函数对一些连通域小的进行筛选  以后可以根据实地判断筛选 针对稀疏人物目标的跟踪
 			imshow("dd",selectedMat);
 			//还应该再进行大小的判断 项目用 否则会出很大的问题，还有长宽的判断
 	//算法后续步骤：
@@ -131,24 +136,30 @@ int main(int argc, char* argv[])
 			Mat hullMat;
 			hullArea(selectedMat,hullMat);
 			imshow("hh",hullMat);
-			//再将连通区域合并 防止出人像有缺失  //先拍一个比较稳定的视频
-
-			//再次将区域变换成矩形
-
+			//再将连通区域合并 防止出人像有缺失  （暂时不考虑，默认性能比较好）
+			//获取结构体（定义函数结构体）
+			getBwMix(hullMat,picBwMix);//得到结构体
+			cout<<picBwMix.size()<<endl;
+			Mat showColor=Mat::zeros(hullMat.size(),CV_8UC3);
+			bwMixToColorMat(picBwMix,showColor);
+			imshow("color",showColor);
 			//考虑一种方法，将连通区域标记
 
-			//下幅图像标记引用上幅图像的标记
-
+			//下幅图像标记引用上幅图像的标记 （输入是前一帧和后一帧）
 			//如果没有标记则重新赋值一个新的标记 
-			//用其他颜色显示
+
+			//用其他颜色显示（提前给函数赋值好颜色）
 
 			//需要有一个比较好的函数
-			//当标记已经不存在时，要想办法去重
+			//当标记已经不存在时，要想办法去重（怎么处理丢失问题，这个也很重要，现在先不考虑，等5月结束后，写完论文再考虑该事情，加大算法的复杂度）
 
 		}
 
-		if ( cvWaitKey(1) == 'q' )
+		if ( cvWaitKey(50) == 'q' )
+		{
+			//kinect.~Kinect();//这个函数可能写的有一些问题，在进行kinect的释放中，释放的大于未释放的，其增加了复杂度。
 			break;
+		}
 	}
 	//kinect.~Kinect();
 	return 0;
