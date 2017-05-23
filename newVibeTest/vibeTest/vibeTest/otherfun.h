@@ -2,8 +2,16 @@
 #include <iostream>
 #include "opencv2/opencv.hpp"
 #include <vector>
+#include <set>
+#include <time.h>
 
 using namespace cv;
+
+//在完善好程序后，将这些函数最后都封装到一个类里面
+//class overlapPro
+//{
+//
+//};
 
 struct bwMix //定义连通区域的结构体
 {
@@ -11,6 +19,7 @@ struct bwMix //定义连通区域的结构体
 	int markLabel;//标记
 	Mat bwEdge;//边缘信息
 	Point center;//图像的重心
+	time_t bwTime;//探针收集到的时刻
 };
 
 void fillHole(const Mat srcBw, Mat &dstBw)//参考网上的填充函数，很巧妙
@@ -185,6 +194,7 @@ void getBwMix(Mat &src,vector<bwMix> &dst)
 		for (int i = 0; i < contours.size(); i++)
 		{
 			bwMix temp;
+			temp.bwTime=time(NULL);//获取时间
 			temp.markLabel=i;
 			temp.bwEdge=contours[i];
 			temp.bwRect=boundingRect(contours[i]);
@@ -192,7 +202,6 @@ void getBwMix(Mat &src,vector<bwMix> &dst)
 			Moments m=moments(contours[i],false);
 			temp.center.x=m.m10/m.m00;
 			temp.center.y=m.m01/m.m00;
-			cout<<temp.center<<endl;
 			dst.push_back(temp);
 		}
 	}
@@ -213,7 +222,7 @@ void bwMixToColorMat(vector<bwMix> &src,Mat &dst)
 	globalColor[8] = Scalar( 173, 205, 249 );
 	globalColor[9] = Scalar( 169, 200, 200 );
 	//dst=Mat::zeros(dstrows,dstcols,CV_8UC3);
-	if (src.size()>=1&&src.size()<11)
+	if (src.size()>=1&&src.size()<11)//添加颜色的边界值，不要让值太多，当数量超过时不显示图像
 	{
 		for (int i=0;i<src.size();i++)
 		{
@@ -228,9 +237,9 @@ void bwMixToColorMat(vector<bwMix> &src,Mat &dst)
 float rectOverlap(const Rect & preBox,const Rect & nowBox) //直接使用Rect函数 好像暂时没啥用
 { 
 	Rect rect=preBox & nowBox;//取两个矩阵的交集
-	if (preBox.area()!=0)
+	if (nowBox.area()!=0)
 	{
-		return rect.area()/preBox.area();
+		return float(rect.area())/float(nowBox.area());
 	}else
 	{
 		return 0.0;
@@ -240,23 +249,93 @@ float rectOverlap(const Rect & preBox,const Rect & nowBox) //直接使用Rect函数 好
 
 //用旧的矩阵图像标号，更新新的标号的函数 让连续的帧overlap更新，通过结构体向量来传递图像的信息,当没有标号时，想办法去赋值，不能超过最大的数量先假定是10个
 //这里先不考虑中断的情况，如果存在中断的情况，应该要有一个缓冲的感觉，比如多次取平均，感觉构造一个表比较好，这样思路比较清晰
-void renewVec(vector<bwMix> &src, vector<bwMix> &dst)
+void renewVec(vector<bwMix> &src, vector<bwMix> &dst,float thd)
 {
-	//构建一个表
+	//构建一个表 n*m大小
 	int m=src.size();
 	int n=dst.size();
+	set<int> S;//通过设置s筛选数据
 	//构建一维数组，替代二维数组
+	Mat table(n,m,CV_32FC1,0.0);//在openCV下使用mat作为2维数组更方便
+	for (int i = 0; i < n; i++)
+	{
+		float* data=table.ptr<float>(i);
+		for (int j = 0; j < m; j++)
+		{
+			 data[j]=rectOverlap(src[j].bwRect,dst[i].bwRect);
+			 S.insert(src[j].markLabel);//剔除重复的元素
 
-	cv::Mat table(m,n,CV_32FC1,0.0);
+		}
+	}
+	//通过表进行查询，完成标号的更新 其中行号n对应的是要更新的标号，m是可以筛选的标号
+	for (int i = 0; i < n; i++)//开始更新
+	{
+		float maxNum=thd;
+		int maxIndex=-1;
+		float* data=table.ptr<float>(i);
+		for (int j = 0; j < m; j++) //找出每个列表中，最大的值
+		{
+			if (maxNum<data[j])
+			{
+				maxNum=data[j];
+				maxIndex=j;
+			}
+		}
+		//更新存在的标号 要考虑新加入和后来没有的索引
+		if (maxIndex!=-1)
+		{
+			dst[i].markLabel=src[maxIndex].markLabel;
+		}else//添加新的标号
+		{
+			for (int k=0;k<30;k++)//只添加0-19内的元素
+			{
+				if(S.find(k)==S.end())//添加不存在的标号，当其标号不存在时
+				{
+					dst[i].markLabel=k;
+					S.insert(k);
+					break;
+				}
+			}
+		}
+	}
+}
 
+int charTimeGetSecond(char ttt[14])//获得得到数据的后两位
+{
+	int result;
+	char second[2];
+	memcpy(second,ttt+12,sizeof(char)*2);
+	result=atoi(second);
+	return result;
+}
+//轨迹计算公式 根据相邻的重心来输出轨迹 需要考虑到中断的问题，因为轨迹会出现中断，当中断时要输出轨迹，以后再考虑,在轨迹中应该加入滤波的过程，因为图像在运动过程中图像会发生变化
+//轨迹可能会出现遗漏的场景，现在就不需要加入判断
+//还应该加入时间戳
+//加入一个取平均的过程，需要进行处理
+void bwMixToOrbit(vector<bwMix> &src) 
+{ 
+	for (int i = 0; i < src.size(); i++)
+	{
+		char timeFix[16];
+		strftime(timeFix,sizeof(timeFix),"%Y%m%d%H%M%S",localtime(&src[i].bwTime));//时间修复
+		cout<<timeFix<<","<<src[i].markLabel<<","<<src[i].center<<endl;
+	}
+}
+
+//卡尔曼滤波基本算法（可能暂时还不需要）//应该只需要把前面的作为缓冲
+void kalmanfilter()
+{
 
 }
 
+//轨迹变换矩阵（要根据实地场合去计算）暂时先不考虑
+void pointTransform(Point &src,Point &dst)
+{
 
-//轨迹计算公式 根据相邻的重心来输出轨迹 需要考虑到中断的问题，因为轨迹会出现中断，当中断时要输出轨迹，以后再考虑,在轨迹中应该加入滤波的过程，因为图像在运动过程中图像会发生变化
+}
 
-
-void compute_absolute_mat(const Mat& in, Mat & out)  //光流法用
+//光流法用
+void compute_absolute_mat(const Mat& in, Mat & out)  
 {  
 	if (out.empty()){  
 		out.create(in.size(), CV_32FC1);  

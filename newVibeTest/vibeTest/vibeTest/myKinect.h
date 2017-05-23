@@ -117,6 +117,7 @@ Kinect::Kinect()
 	pDepthFrame = nullptr;
 	pBodyIndexFrame=nullptr;
 	pBodyFrame = nullptr;
+	pInfraredFrame= nullptr;
 	colorHalfSizeMat.create(ColorHeight/2, ColorWidth/2, CV_8UC4);
 	colorMat.create( ColorHeight, ColorWidth, CV_8UC4);
 	depthMat16.create(DepthHeight, DepthWidth, CV_16UC1);
@@ -130,6 +131,11 @@ Kinect::Kinect()
 }
 Kinect::~Kinect()
 {
+	SafeRelease( pDepthFrame );
+	SafeRelease( pColorFrame );
+	SafeRelease( pBodyIndexFrame );
+	SafeRelease( pBodyFrame );
+	SafeRelease( pInfraredFrame);
 	SafeRelease( pDepthSource );
 	SafeRelease( pDepthReader );
 	SafeRelease( pDepthDescription );
@@ -143,6 +149,7 @@ Kinect::~Kinect()
 	SafeRelease( pCoordinateMapper );
 	SafeRelease( pBodySource );
 	SafeRelease( pBodyReader );
+
 	if ( pSensor )
 	{
 		pSensor->Close();
@@ -266,6 +273,7 @@ void Kinect::depthProcess()//16Î»ÏÔÊ¾»á±¨´í ²»ÓÃ¸Ãº¯Êý´¦Àí
 	}
 	SafeRelease( pDepthFrame );  //Õâ¸öframeÒ»¶¨ÒªÊÍ·Å£¬²»È»ÎÞ·¨¸üÐÂ
 }
+
 void Kinect::depthProcess2()
 {
 	UINT16 *pBuffer = NULL;
@@ -432,6 +440,7 @@ int Kinect::detPeopleDepth2()
 	}
 	return Temp;
 }
+
 void Kinect::InfraredProcess(float fGamma)
 {
 	UINT16 *pBuffer = NULL;
@@ -507,6 +516,7 @@ void Kinect::kincetSave(Mat a,string savePath,int opt)
 		}
 	}
 }
+
 void Kinect::kinectSaveAll(string savePath)
 {
 	vector<int> compression_params;
@@ -555,6 +565,7 @@ int Kinect::areaMatOri(Mat &src)//·µ»Ø¾ØÕóµÄÃæ»ý,ÒªÇóÊäÈëÊý¾Ý¸ñÊ½ÎªUC1
 	}
 	return areaSum=areaSum/255;
 }
+
 void Kinect::MyGammaCorrection(Mat& src, Mat& dst, float fGamma)  //Ù¤ÂíÐ£Õý ²Î¿¼ÍøÉÏµÄ³ÌÐò
 {  
     CV_Assert(src.data);  
@@ -564,7 +575,7 @@ void Kinect::MyGammaCorrection(Mat& src, Mat& dst, float fGamma)  //Ù¤ÂíÐ£Õý ²Î¿
     unsigned char lut[256];  
     for( int i = 0; i < 256; i++ )  
     {  
-        lut[i] = saturate_cast<uchar>(pow((float)(i/255.0), fGamma) * 255.0f);  
+        lut[i] = saturate_cast<uchar>(pow((float)(i/255.0), fGamma) * 255.0f);   //saturate_cast openCVº¯Êý£¬·ÀÖ¹Êý¾ÝÒç³ö
     }  
     dst = src.clone();  
     const int channels = dst.channels();  
@@ -574,7 +585,6 @@ void Kinect::MyGammaCorrection(Mat& src, Mat& dst, float fGamma)  //Ù¤ÂíÐ£Õý ²Î¿
             {  
                 MatIterator_<uchar> it, end;  
                 for( it = dst.begin<uchar>(), end = dst.end<uchar>(); it != end; it++ )  
-                    //*it = pow((float)(((*it))/255.0), fGamma) * 255.0;  
                     *it = lut[(*it)];  
                 break;  
             }  
@@ -583,9 +593,6 @@ void Kinect::MyGammaCorrection(Mat& src, Mat& dst, float fGamma)  //Ù¤ÂíÐ£Õý ²Î¿
                 MatIterator_<Vec3b> it, end;  
                 for( it = dst.begin<Vec3b>(), end = dst.end<Vec3b>(); it != end; it++ )  
                 {  
-                    //(*it)[0] = pow((float)(((*it)[0])/255.0), fGamma) * 255.0;  
-                    //(*it)[1] = pow((float)(((*it)[1])/255.0), fGamma) * 255.0;  
-                    //(*it)[2] = pow((float)(((*it)[2])/255.0), fGamma) * 255.0;  
                     (*it)[0] = lut[((*it)[0])];  
                     (*it)[1] = lut[((*it)[1])];  
                     (*it)[2] = lut[((*it)[2])];  

@@ -23,18 +23,18 @@ int main(int argc, char* argv[])
 
 	//video获取部分
 	VideoCapture capture;
-	//capture.open("bodyvideo1.avi");
+	//capture.open("bodyvideo2.avi");
 	capture.open("4ren.mp4");
 
-	//vibe部分
-	Mat  mask;
-	ViBe_BGS Vibe_Bgs;
-	int count = 0;
+	//vibe部分   利用vibe算法，其对颜色敏感程度较高，但在处理进行跟踪时，图像会出现较大的损失。
+	//Mat  mask;
+	//ViBe_BGS Vibe_Bgs;
+	//int count = 0;
 
 	//GMM 部分 为了程序速度暂时先不用
-	//cv::BackgroundSubtractorMOG mog(5,5,0.7,10);
-	//Mat foregroud,background;
-
+	cv::BackgroundSubtractorMOG mog(5,5,0.7,10);
+	Mat foregroud,background;
+	;
 	//opticalflow 部分（不好用）
 	//Mat prvGray, optFlow ,absoluteFlow, img_for_show;
 
@@ -43,11 +43,14 @@ int main(int argc, char* argv[])
 	
 	//overlap算法部分
 
-	
+	vector<bwMix> prePicBwMix;
+	prePicBwMix.reserve(100);
+
 	while (1)//处理部分
 	{	
 		Mat frame;
 		vector<bwMix> picBwMix;
+		picBwMix.reserve(100);
 		////kinect部分
 		//kinect.colorProcess();
 		//resize(kinect.colorHalfSizeMat,frame,Size(),0.3,0.3);
@@ -70,33 +73,33 @@ int main(int argc, char* argv[])
 		imshow("input",gray);	
 
 		////GMM部分
-		//mog(gray,foregroud,0.001);
+		mog(gray,foregroud,0.001);
 		////mog.getBackgroundImage(background);//加入这句会出bug
 
-		//vibe部分
-		count++;
-		Mat masked;
-		if (count == 1)
-		{
-			Vibe_Bgs.init(gray);
-			Vibe_Bgs.processFirstFrame(gray);
-			cout<<"Init complete!"<<endl;
-			
-		}
-		else
-		{
-			Vibe_Bgs.testAndUpdate(gray);
-			mask = Vibe_Bgs.getMask();
+		////vibe部分
+		//count++;
+		//Mat masked;
+		//if (count == 1)
+		//{
+		//	Vibe_Bgs.init(gray);
+		//	Vibe_Bgs.processFirstFrame(gray);
+		//	cout<<"Init complete!"<<endl;
+		//	
+		//}
+		//else
+		//{
+		//	Vibe_Bgs.testAndUpdate(gray);
+		//	mask = Vibe_Bgs.getMask();
 
-			//vibe 显示部分
-			fillHole(mask,masked);
-			erode(masked,masked,element);
-			dilate(masked,masked,element);
-			dilate(masked,masked,element);
-			dilate(masked,masked,element);
-			imshow("mask", masked);
-			cout<<count<<endl;
-		}
+		//	//vibe 显示部分
+		//	fillHole(mask,masked);
+		//	erode(masked,masked,element);
+		//	dilate(masked,masked,element);
+		//	dilate(masked,masked,element);
+		//	dilate(masked,masked,element);
+		//	imshow("mask", masked);
+		//	cout<<count<<endl;
+		//}
 
 		////opticalflow 部分(不好用)
 		//if (prvGray.data){  
@@ -108,11 +111,11 @@ int main(int argc, char* argv[])
 		//cv::swap(prvGray, gray);  
 
 		////GMM显示部分
-		//Mat maskeded;
-		//fillHole(foregroud,maskeded);
-		//erode(maskeded,maskeded,element);
-		//dilate(maskeded,maskeded,element);
-		//imshow("GMM foreground",maskeded);
+		Mat maskeded;
+		fillHole(foregroud,maskeded);
+		erode(maskeded,maskeded,element);
+		dilate(maskeded,maskeded,element);
+		imshow("GMM foreground",maskeded);
 
 		////vibe和GMM合并部分
 		//Mat mergeMat;
@@ -123,12 +126,12 @@ int main(int argc, char* argv[])
 		//}
 		
 		//从检测到120帧之后才开始查找，需要这个时间来初始化图像，不然会出现ghost现象
-		if(count>=20)//这个应该是需要根据实际情况能修改的
+		if(1)//这个应该是需要根据实际情况能修改的count>=20
 		{
-			count--;
+			//count--;
 			//这里才开始进行函数处理，不然连通区域太多了
 			Mat selectedMat;
-			selectArea(masked,selectedMat,180,4000);//通过函数对一些连通域小的进行筛选  以后可以根据实地判断筛选 针对稀疏人物目标的跟踪
+			selectArea(maskeded,selectedMat,180,4000);//通过函数对一些连通域小的进行筛选  以后可以根据实地判断筛选 针对稀疏人物目标的跟踪
 			imshow("dd",selectedMat);
 			//还应该再进行大小的判断 项目用 否则会出很大的问题，还有长宽的判断
 	//算法后续步骤：
@@ -139,19 +142,25 @@ int main(int argc, char* argv[])
 			//再将连通区域合并 防止出人像有缺失  （暂时不考虑，默认性能比较好）
 			//获取结构体（定义函数结构体）
 			getBwMix(hullMat,picBwMix);//得到结构体
-			cout<<picBwMix.size()<<endl;
+
+			//对结构体进行更新
+			//下幅图像标记引用上幅图像的标记 （输入是前一帧和后一帧）
+			//如果没有标记则重新赋值一个新的标记 
+			//当标记已经不存在时，要想办法去重（怎么处理丢失问题，这个也很重要，现在先不考虑，等5月结束后，写完论文再考虑该事情，加大算法的复杂度）
+			if (prePicBwMix.size()!=0)
+			{
+				renewVec(prePicBwMix,picBwMix,0.0);
+			}
+			prePicBwMix=picBwMix;//对数据进行更新
+
+			//彩色显示	//用其他颜色显示（提前给函数赋值好颜色）
 			Mat showColor=Mat::zeros(hullMat.size(),CV_8UC3);
 			bwMixToColorMat(picBwMix,showColor);
 			imshow("color",showColor);
-			//考虑一种方法，将连通区域标记
+			//输出轨迹
+			bwMixToOrbit(picBwMix);
 
-			//下幅图像标记引用上幅图像的标记 （输入是前一帧和后一帧）
-			//如果没有标记则重新赋值一个新的标记 
-
-			//用其他颜色显示（提前给函数赋值好颜色）
-
-			//需要有一个比较好的函数
-			//当标记已经不存在时，要想办法去重（怎么处理丢失问题，这个也很重要，现在先不考虑，等5月结束后，写完论文再考虑该事情，加大算法的复杂度）
+			
 
 		}
 
