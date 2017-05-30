@@ -315,7 +315,7 @@ void Kinect::bodyLocation()
 	SafeRelease( pBodyFrame );  //这个frame一定要释放，不然无法更新	
 }
 
-void Kinect::kinectDataRawProecess(char dataTime[14],int BIndex,double r1,double r2,double r3,double r4)
+void Kinect::kinectDataRawProecess(char dataTime[14],int BIndex,double r1,double r2,double r3,double r4)//负责把距离信息存储下来
 {
 	int second=charTimeGetSecond(dataTime);
 	memcpy(kinectTimeRaw[second][BIndex][kinectTIIndex[second][BIndex]].Timestamp,dataTime,sizeof(char)*14);
@@ -326,15 +326,15 @@ void Kinect::kinectDataRawProecess(char dataTime[14],int BIndex,double r1,double
 	kinectTIIndex[second][BIndex]++;
 }
 
-void Kinect::kinectDataProProecess()
+void Kinect::kinectDataProProecess()//负责将信息压缩到同一秒
 {
 	char timeFixed[16];
 	time_t processIndexInit=processIndex-4;
 	strftime(timeFixed,sizeof(timeFixed),"%Y%m%d%H%M%S",localtime(&processIndexInit));
 	int second=charTimeGetSecond(timeFixed);
-	double r0Sum=0.0,r2Sum=0.0,r3Sum=0.0,r1Sum=0.0;
 	for (int i=0;i<BODY_COUNT;i++)//每个bodycount
 	{
+		double r0Sum=0.0,r2Sum=0.0,r3Sum=0.0,r1Sum=0.0;//之前没有发现的错误，幸好之前是单人，错误没有加大，在多人下错误会非常大
 		if (kinectTIIndex[second][i]!=0)//如果空不操作
 		{
 			for (int j=0;j<kinectTIIndex[second][i];j++)//计算变量
@@ -344,12 +344,6 @@ void Kinect::kinectDataProProecess()
 				r2Sum+=kinectTimeRaw[second][i][j].r[2];
 				r3Sum+=kinectTimeRaw[second][i][j].r[3];
 			}
-			//可能需要一个新的数据结构存储，但现在看来似乎并不需要
-			//memcpy(kinectTimeInt[second][i].Timestamp,kinectTimeRaw[second][i][0].Timestamp,sizeof(char)*14);
-			//kinectTimeInt[second][i].r[0]=r0Sum/kinectTIIndex[second][i];
-			//kinectTimeInt[second][i].r[1]=r1Sum/kinectTIIndex[second][i];
-			//kinectTimeInt[second][i].r[2]=r2Sum/kinectTIIndex[second][i];
-			//kinectTimeInt[second][i].r[3]=r3Sum/kinectTIIndex[second][i];
 			double r0ave=r0Sum/kinectTIIndex[second][i];
 			double r1ave=r1Sum/kinectTIIndex[second][i];
 			double r2ave=r2Sum/kinectTIIndex[second][i];

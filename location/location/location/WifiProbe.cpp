@@ -94,6 +94,10 @@ void Probe::timesSysc(time_t &syscTime,mncatsWifi &Probedata)//同步多探针的时间
 	{
 		index=2;
 	}
+	else if(Probedata.mac1=="C8:E7:D8:D4:01:70")
+	{
+		index=3;
+	}
 
 	if (abs(syscTime-syscTimeBuff[index])>3600)//设置两个小时完成一次同步
 	{
@@ -126,7 +130,7 @@ void Probe::probeProcess()
 		if(datatemp.mac1=="C8:E7:D8:D4:A3:75")//定义的是地址
 		{
 			std::cout<<"探针1的数据"<<" ";
-			mobileManuOutput(datatemp);
+			//mobileManuOutput(datatemp);//输出品牌
 			std::cout<<std::endl;
 			timeFixtt=charToTimeInt(datatemp.Timestamp)+detProbeTime[0];//localtime只是用来转换格式,它并没有获取系统时间的功能，它和gmtime相对。
 			strftime(timeFix,sizeof(timeFix),"%Y%m%d%H%M%S",localtime(&timeFixtt));//时间修复
@@ -135,7 +139,7 @@ void Probe::probeProcess()
 		else if(datatemp.mac1=="C8:E7:D8:D4:A3:02")
 		{		
 			std::cout<<"探针2的数据"<<" ";
-			mobileManuOutput(datatemp);
+			//mobileManuOutput(datatemp);//输出品牌
 			std::cout<<std::endl;
 			timeFixtt=charToTimeInt(datatemp.Timestamp)+detProbeTime[1];
 			strftime(timeFix,sizeof(timeFix),"%Y%m%d%H%M%S",localtime(&timeFixtt));//时间修复
@@ -144,11 +148,20 @@ void Probe::probeProcess()
 		else if(datatemp.mac1=="C8:E7:D8:D4:A3:60")
 		{
 			std::cout<<"探针3的数据"<<" ";
-			mobileManuOutput(datatemp);
+			//mobileManuOutput(datatemp);//输出品牌
 			std::cout<<std::endl;
 			timeFixtt=charToTimeInt(datatemp.Timestamp)+detProbeTime[2];
 			strftime(timeFix,sizeof(timeFix),"%Y%m%d%H%M%S",localtime(&timeFixtt));//时间修复
 			rssiIntegrate(timeFix,datatemp,2);
+		}
+		else if(datatemp.mac1=="C8:E7:D8:D4:01:70")
+		{
+			std::cout<<"探针4的数据"<<" ";
+			//mobileManuOutput(datatemp);//输出品牌
+			std::cout<<std::endl;
+			timeFixtt=charToTimeInt(datatemp.Timestamp)+detProbeTime[3];
+			strftime(timeFix,sizeof(timeFix),"%Y%m%d%H%M%S",localtime(&timeFixtt));//时间修复
+			rssiIntegrate(timeFix,datatemp,3);
 		}
 		if (syscTime>=processGetIndex)//进行插空操作 最终达到循环操作,改成大于等于是因为数据有可能存在跳秒
 		{
@@ -254,7 +267,7 @@ void  Probe::rssiMissGet()//用于找出数据为空的集合，负责整合和清空，应该还拥有输
 			}
 		}
 		//检测该函数部分,以后可以删除
-		//std::cout<<"Get函数输出了"<<timeFixed<<std::endl;
+
 		for (int index=0;index<rssiMissIndex[second];index++)
 		{
 			for (int ii=0;ii<14;ii++) 
@@ -286,68 +299,69 @@ void  Probe::rssiMissGet()//用于找出数据为空的集合，负责整合和清空，应该还拥有输
 
 void  Probe::rssiMissNot()//用于填补数据为空的集合 明天分析不能连续输出的原因
 {
-	//std::cout<<"rssiMissNot运行了 "<<std::endl;
+	//函数部分似乎确实用不到这个，这里将其注释掉了
+	//////////////////////////////////////////////////////////////////////////
 	char timeFixed[16];
 	time_t processNotIndexInit=processNotIndex-6;
 	strftime(timeFixed,sizeof(timeFixed),"%Y%m%d%H%M%S",localtime(&processNotIndexInit));
 	int second=charTimeGetSecond(timeFixed);
-	//要加入是否为空的判断，才输出
-	if (rssiMissIndex[second]!=0)
-	{
-		//填补函数的部分
-		for (int i = 0; i < rssiMissIndex[second]; i++)//遍历组合后的结果
-		{
-			for (int j = 0; j < ProbeNum; j++)//遍历RSSI
-			{
-				if (seled[second][i].Rssi[j]==0)//找出发现RSSI为0的部分
-				{
-					//开始上下查找，填补空值,取相邻时间相同Mac地址有值的RSSI的最大值，默认都遍历一回，没有就算了
-					for (int k = 0; k < rssiMissIndex[(second-1)%60]; k++)//向前一秒查找
-					{
-						if (rssiMissIndex[(second-1)%60]==0)
-							break;
-						if (memcmp(seled[(second-1)%60][k].Mumac,seled[second][i].Mumac,sizeof(unsigned char)*6)==0)
-						{
-							seled[second][i].Rssi[j]=MaxRssi(seled[(second-1)%60][k].Rssi[j],seled[second][i].Rssi[j]);
-							break;
-						}
-					}
-					for (int k = 0; k < rssiMissIndex[(second+1)%60]; k++)//向后一秒查找
-					{
-						if (rssiMissIndex[(second+1)%60]==0)
-							break;
-						if (memcmp(seled[(second+1)%60][k].Mumac,seled[second][i].Mumac,sizeof(unsigned char)*6)==0)
-						{
-							seled[second][i].Rssi[j]=MaxRssi(seled[(second+1)%60][k].Rssi[j],seled[second][i].Rssi[j]);
-							break;
-						}
-					}
-				}
-			}
-		}
-		//文件输出函数&检测该函数部分
-		//std::cout<<"Not函数输出了"<<timeFixed<<std::endl;
-		for (int index=0;index<rssiMissIndex[second];index++)
-		{
-			for (int ii=0;ii<14;ii++) 
-			{
-				fprintf(fpNot,"%c", seled[second][index].Timestamp[ii]);
-			}
-			fprintf(fpNot,",");
-			fprintf(fpNot,"%02X:%02X:%02X:%02X:%02X:%02X,",seled[second][index].Mumac[0], seled[second][index].Mumac[1], seled[second][index].Mumac[2], \
-				seled[second][index].Mumac[3],seled[second][index].Mumac[4], seled[second][index].Mumac[5]);
-			//输出多个探针的RSSI信息部分
-			for (int r=0;r<ProbeNum;r++)
-			{
-				fprintf(fpNot,"%d", seled[second][index].Rssi[r]);
-				if(r!=ProbeNum-1)//最后一个不输出逗号
-				{
-					fprintf(fpNot,",");
-				}
-			}
-			fprintf(fpNot,"\n");
-		}
-	}	
+	////要加入是否为空的判断，才输出
+	//if (rssiMissIndex[second]!=0)
+	//{
+	//	//填补函数的部分
+	//	for (int i = 0; i < rssiMissIndex[second]; i++)//遍历组合后的结果
+	//	{
+	//		for (int j = 0; j < ProbeNum; j++)//遍历RSSI
+	//		{
+	//			if (seled[second][i].Rssi[j]==0)//找出发现RSSI为0的部分
+	//			{
+	//				//开始上下查找，填补空值,取相邻时间相同Mac地址有值的RSSI的最大值，默认都遍历一回，没有就算了
+	//				for (int k = 0; k < rssiMissIndex[(second-1)%60]; k++)//向前一秒查找
+	//				{
+	//					if (rssiMissIndex[(second-1)%60]==0)
+	//						break;
+	//					if (memcmp(seled[(second-1)%60][k].Mumac,seled[second][i].Mumac,sizeof(unsigned char)*6)==0)
+	//					{
+	//						seled[second][i].Rssi[j]=MaxRssi(seled[(second-1)%60][k].Rssi[j],seled[second][i].Rssi[j]);
+	//						break;
+	//					}
+	//				}
+	//				for (int k = 0; k < rssiMissIndex[(second+1)%60]; k++)//向后一秒查找
+	//				{
+	//					if (rssiMissIndex[(second+1)%60]==0)
+	//						break;
+	//					if (memcmp(seled[(second+1)%60][k].Mumac,seled[second][i].Mumac,sizeof(unsigned char)*6)==0)
+	//					{
+	//						seled[second][i].Rssi[j]=MaxRssi(seled[(second+1)%60][k].Rssi[j],seled[second][i].Rssi[j]);
+	//						break;
+	//					}
+	//				}
+	//			}
+	//		}
+	//	}
+	//	//文件输出函数&检测该函数部分
+	//	for (int index=0;index<rssiMissIndex[second];index++)
+	//	{
+	//		for (int ii=0;ii<14;ii++) 
+	//		{
+	//			fprintf(fpNot,"%c", seled[second][index].Timestamp[ii]);
+	//		}
+	//		fprintf(fpNot,",");
+	//		fprintf(fpNot,"%02X:%02X:%02X:%02X:%02X:%02X,",seled[second][index].Mumac[0], seled[second][index].Mumac[1], seled[second][index].Mumac[2], \
+	//			seled[second][index].Mumac[3],seled[second][index].Mumac[4], seled[second][index].Mumac[5]);
+	//		//输出多个探针的RSSI信息部分
+	//		for (int r=0;r<ProbeNum;r++)
+	//		{
+	//			fprintf(fpNot,"%d", seled[second][index].Rssi[r]);
+	//			if(r!=ProbeNum-1)//最后一个不输出逗号
+	//			{
+	//				fprintf(fpNot,",");
+	//			}
+	//		}
+	//		fprintf(fpNot,"\n");
+	//	}
+	//}	
+	//////////////////////////////////////////////////////////////////////////
 	//清空，并且要更加滞后才行,清空的应该是上一个变量
 	memset(seled[(second-1)%60],0,sizeof(rssiMiss)*sameTimeMacNum);
 	rssiMissIndex[(second-1)%60]=0;
