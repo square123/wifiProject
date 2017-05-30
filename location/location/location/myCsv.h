@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
-class Csv
+class Csv  //加入这个是为了识别品牌
 {
 public:
 	std::vector <std::vector <std::string>> table;    //存储表格结构的二维vector
