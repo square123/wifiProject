@@ -15,6 +15,7 @@
 #include <vector>
 #include <fstream>//希望输入时间
 #include "MncatsWifi.h"
+#include "proMySQL.h" 
 #pragma comment(lib,"WS2_32.lib")
 using namespace std;
 
@@ -61,6 +62,5 @@ public:
 	void getSpecialMac(unsigned char Mymac[6]);//转换字符串的形式的函数
 	void getSpecialRssi(char MyRssi);//转换字符串的形式的函数
 	char MaxRssi(char rssi1,char rssi2);//返回较大的RSSI值，且该值不能能等于0
-
 };
 

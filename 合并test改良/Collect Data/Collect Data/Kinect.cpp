@@ -476,12 +476,12 @@ void Kinect::segmentProcess2(int Miner)
 
 	switch (Miner)
 	{
-	case 0:{dst = "E://数据输出//0//";break;}
-	case 1:{dst = "E://数据输出//1//";break;}
-	case 2:{dst = "E://数据输出//2//";break;}
-	case 3:{dst = "E://数据输出//3//";break;}
-	case 4:{dst = "E://数据输出//4//";break;}
-	case 5:{dst = "E://数据输出//5//";break;}
+	case 0:{dst = "G://数据输出//0//";break;}
+	case 1:{dst = "G://数据输出//1//";break;}
+	case 2:{dst = "G://数据输出//2//";break;}
+	case 3:{dst = "G://数据输出//3//";break;}
+	case 4:{dst = "G://数据输出//4//";break;}
+	case 5:{dst = "G://数据输出//5//";break;}
 	default: break;
 	}
 
@@ -611,12 +611,12 @@ void Kinect::select2(int indexer)
 	string path;  
 	switch (indexer)
 	{
-	case 0: { path = "E:\\数据输出\\0\\";  break; }    
-	case 1: { path = "E:\\数据输出\\1\\";  break; }   
-	case 2: { path = "E:\\数据输出\\2\\";  break; }    
-	case 3: { path = "E:\\数据输出\\3\\";  break; }   
-	case 4: { path = "E:\\数据输出\\4\\";  break; }   
-	case 5: { path = "E:\\数据输出\\5\\";  break; }  
+	case 0: { path = "G:\\数据输出\\0\\";  break; }    
+	case 1: { path = "G:\\数据输出\\1\\";  break; }   
+	case 2: { path = "G:\\数据输出\\2\\";  break; }    
+	case 3: { path = "G:\\数据输出\\3\\";  break; }   
+	case 4: { path = "G:\\数据输出\\4\\";  break; }   
+	case 5: { path = "G:\\数据输出\\5\\";  break; }  
 	default: break;
 	}
 
@@ -697,18 +697,30 @@ void Kinect::select2(int indexer)
 				const char * filename=fileFullName.c_str();
 
 				switch (parts)
-				{
-				case 0:{ char cmd_0[255] = {0}; sprintf(cmd_0, "copy %s E:\\处理后\\%05d_0.jpg", filename,T_enter);system(cmd_0);break;}
-				case 1:{ char cmd_1[255] = {0}; sprintf(cmd_1, "copy %s E:\\处理后\\%05d_1.jpg", filename,T_enter);system(cmd_1);break;}
-				case 2:{ char cmd_2[255] = {0}; sprintf(cmd_2, "copy %s E:\\处理后\\%05d_2.jpg", filename,T_enter);system(cmd_2);break;}
-				case 3:{ char cmd_3[255] = {0}; sprintf(cmd_3, "copy %s E:\\处理后\\%05d_3.jpg", filename,T_enter);system(cmd_3);break;}
-				case 4:{ char cmd_4[255] = {0}; sprintf(cmd_4, "copy %s E:\\处理后\\%05d_4.jpg", filename,T_enter);system(cmd_4);break;}
-				case 5:{ char cmd_5[255] = {0}; sprintf(cmd_5, "copy %s E:\\处理后\\%05d_5.jpg", filename,T_enter);system(cmd_5);break;}
-				case 6:{ char cmd_6[255] = {0}; sprintf(cmd_6, "copy %s E:\\处理后\\%05d_6.jpg", filename,T_enter);system(cmd_6);break;}
-				case 7:{ char cmd_7[255] = {0}; sprintf(cmd_7, "copy %s E:\\处理后\\%05d_7.jpg", filename,T_enter);system(cmd_7);break;}
-				case 8:{ char cmd_8[255] = {0}; sprintf(cmd_8, "copy %s E:\\处理后\\%05d_8.jpg", filename,T_enter);system(cmd_8);break;}
-				case 9: {char cmd_9[255] = {0}; sprintf(cmd_9, "copy %s E:\\处理后\\%05d_9.jpg", filename,T_enter);system(cmd_9);break;}
-				case 10:{ char cmd_10[255] = {0}; sprintf(cmd_10, "copy %s E:\\处理后\\%05d_10.jpg", filename,T_enter);system(cmd_10);}break;
+				{//改写！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+				//case 0:{ char cmd_0[255] = {0}; sprintf(cmd_0, "copy %s G:\\处理后\\图像数据\\%05d_0.jpg", filename,T_enter);system(cmd_0);break;}
+				//case 1:{ char cmd_1[255] = {0}; sprintf(cmd_1, "copy %s G:\\处理后\\图像数据\\%05d_1.jpg", filename,T_enter);system(cmd_1);break;}
+				//case 2:{ char cmd_2[255] = {0}; sprintf(cmd_2, "copy %s G:\\处理后\\图像数据\\%05d_2.jpg", filename,T_enter);system(cmd_2);break;}
+				//case 3:{ char cmd_3[255] = {0}; sprintf(cmd_3, "copy %s G:\\处理后\\图像数据\\%05d_3.jpg", filename,T_enter);system(cmd_3);break;}
+				//case 4:{ char cmd_4[255] = {0}; sprintf(cmd_4, "copy %s G:\\处理后\\图像数据\\%05d_4.jpg", filename,T_enter);system(cmd_4);break;}
+				//case 5:{ char cmd_5[255] = {0}; sprintf(cmd_5, "copy %s G:\\处理后\\图像数据\\%05d_5.jpg", filename,T_enter);system(cmd_5);break;}
+				//case 6:{ char cmd_6[255] = {0}; sprintf(cmd_6, "copy %s G:\\处理后\\图像数据\\%05d_6.jpg", filename,T_enter);system(cmd_6);break;}
+				//case 7:{ char cmd_7[255] = {0}; sprintf(cmd_7, "copy %s G:\\处理后\\图像数据\\%05d_7.jpg", filename,T_enter);system(cmd_7);break;}
+				//case 8:{ char cmd_8[255] = {0}; sprintf(cmd_8, "copy %s G:\\处理后\\图像数据\\%05d_8.jpg", filename,T_enter);system(cmd_8);break;}
+				//case 9: {char cmd_9[255] = {0}; sprintf(cmd_9, "copy %s G:\\处理后\\图像数据\\%05d_9.jpg", filename,T_enter);system(cmd_9);break;}
+				//case 10:{ char cmd_10[255] = {0}; sprintf(cmd_10, "copy %s G:\\处理后\\图像数据\\%05d_10.jpg", filename,T_enter);system(cmd_10);}break;
+
+				case 0:{ string tmp; tmp="copy "+string(filename)+"  G:\\处理后\\图像数据\\"+timeIntToTimestampString(T_enter)+"_0.jpg";system(tmp.c_str());break;}
+				case 1:{ string tmp; tmp="copy "+string(filename)+"  G:\\处理后\\图像数据\\"+timeIntToTimestampString(T_enter)+"_1.jpg";system(tmp.c_str());break;}
+				case 2:{string tmp; tmp="copy "+string(filename)+"  G:\\处理后\\图像数据\\"+timeIntToTimestampString(T_enter)+"_2.jpg";system(tmp.c_str());break;}
+				case 3:{ string tmp; tmp="copy "+string(filename)+"  G:\\处理后\\图像数据\\"+timeIntToTimestampString(T_enter)+"_3.jpg";system(tmp.c_str());break;}
+				case 4:{ string tmp; tmp="copy "+string(filename)+"  G:\\处理后\\图像数据\\"+timeIntToTimestampString(T_enter)+"_4.jpg";system(tmp.c_str());break;}
+				case 5:{ string tmp; tmp="copy "+string(filename)+"  G:\\处理后\\图像数据\\"+timeIntToTimestampString(T_enter)+"_5.jpg";system(tmp.c_str());break;}
+				case 6:{ string tmp; tmp="copy "+string(filename)+"  G:\\处理后\\图像数据\\"+timeIntToTimestampString(T_enter)+"_6.jpg";system(tmp.c_str());break;}
+				case 7:{string tmp; tmp="copy "+string(filename)+"  G:\\处理后\\图像数据\\"+timeIntToTimestampString(T_enter)+"_7.jpg";system(tmp.c_str());break;}
+				case 8:{string tmp; tmp="copy "+string(filename)+"  G:\\处理后\\图像数据\\"+timeIntToTimestampString(T_enter)+"_8.jpg";system(tmp.c_str());break;}
+				case 9: {string tmp; tmp="copy "+string(filename)+"  G:\\处理后\\图像数据\\"+timeIntToTimestampString(T_enter)+"_9.jpg";system(tmp.c_str());break;}
+				case 10:{ string tmp; tmp="copy "+string(filename)+"  G:\\处理后\\图像数据\\"+timeIntToTimestampString(T_enter)+"_10.jpg";system(tmp.c_str());break;}
 				default: break;
 				}
 
@@ -793,4 +805,12 @@ short Kinect::medianOut(Mat&src,Point &tl,Point &br)//对16位深度图像进行滤波
 		return 0;
 	}
 	return tempVec[tempVec.size()/2]; // 后输出
+}
+
+string Kinect::timeIntToTimestampString(time_t input)//time_t转换成timestamp   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!临时
+{
+	tm *pTmp=localtime(&input);
+	char pStr[15]={};
+	sprintf(pStr,"%d%d%d%d%d%d",pTmp->tm_year+1900,pTmp->tm_mon+1,pTmp->tm_mday+1,pTmp->tm_hour,pTmp->tm_min,pTmp->tm_sec);
+	return string(pStr);
 }

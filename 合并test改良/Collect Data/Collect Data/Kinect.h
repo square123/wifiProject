@@ -132,5 +132,8 @@ private:
 	IBodyFrameReader* pBodyReader;
 	IBodyFrame* pBodyFrame;
 	ICoordinateMapper* pCoordinateMapper;
+
+	//ÁÙÊ±£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡
+	string timeIntToTimestampString(time_t input);
 };
 #endif
