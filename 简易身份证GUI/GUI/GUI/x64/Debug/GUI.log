@@ -1,0 +1,40 @@
+﻿生成启动时间为 2017/10/25 22:05:47。
+     1>项目“F:\备份GUI\GUI\GUI\GUI.vcxproj”在节点 2 上(Rebuild 个目标)。
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W3 /WX- /sdl /Od /D WIN32 /D _WINDOWS /D _DEBUG /D _MBCS /Gm /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"x64\Debug\GUI.pch" /Fo"x64\Debug\\" /Fd"x64\Debug\vc110.pdb" /Gd /TP /errorReport:prompt stdafx.cpp
+         stdafx.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W3 /WX- /sdl /Od /D WIN32 /D _WINDOWS /D _DEBUG /D _MBCS /Gm /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"x64\Debug\GUI.pch" /Fo"x64\Debug\\" /Fd"x64\Debug\vc110.pdb" /Gd /TP /errorReport:prompt DIBAP.cpp GUI.cpp GUIDlg.cpp
+         GUIDlg.cpp
+         GUI.cpp
+         DIBAP.cpp
+     1>DIBAP.cpp(61): warning C4244: “=”: 从“ULONGLONG”转换到“DWORD”，可能丢失数据
+     1>DIBAP.cpp(1074): warning C4244: “初始化”: 从“SIZE_T”转换到“DWORD”，可能丢失数据
+         正在生成代码...
+       ResourceCompile:
+         C:\Program Files (x86)\Windows Kits\8.0\bin\x86\rc.exe /D _DEBUG /l"0x0804" /Ix64\Debug\ /nologo /fo"x64\Debug\GUI.res" GUI.rc 
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"F:\备份GUI\GUI\x64\Debug\GUI.exe" /INCREMENTAL /NOLOGO opencv_world330d.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /manifestinput:"C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\Include\Manifest\dpiaware.manifest" /DEBUG /PDB:"F:\备份GUI\GUI\x64\Debug\GUI.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"F:\备份GUI\GUI\x64\Debug\GUI.lib" /MACHINE:X64 x64\Debug\GUI.res
+         x64\Debug\DIBAP.obj
+         x64\Debug\GUI.obj
+         x64\Debug\GUIDlg.obj
+         x64\Debug\stdafx.obj
+         ID_Fpr.lib
+         ID_FprCap.lib
+         SynIDCardAPI.lib
+         USBRead.lib
+     1>GUIDlg.obj : error LNK2019: 无法解析的外部符号 Syn_GetCOMBaud，该符号在函数 "public: void __cdecl CGUIDlg::OnClickedButton1(void)" (?OnClickedButton1@CGUIDlg@@QEAAXXZ) 中被引用
+     1>GUIDlg.obj : error LNK2019: 无法解析的外部符号 Syn_OpenPort，该符号在函数 "public: void __cdecl CGUIDlg::OnClickedButton1(void)" (?OnClickedButton1@CGUIDlg@@QEAAXXZ) 中被引用
+     1>GUIDlg.obj : error LNK2019: 无法解析的外部符号 Syn_ClosePort，该符号在函数 "public: void __cdecl CGUIDlg::OnClickedButton1(void)" (?OnClickedButton1@CGUIDlg@@QEAAXXZ) 中被引用
+     1>GUIDlg.obj : error LNK2019: 无法解析的外部符号 Syn_StartFindIDCard，该符号在函数 "public: void __cdecl CGUIDlg::OnClickedButton2(void)" (?OnClickedButton2@CGUIDlg@@QEAAXXZ) 中被引用
+     1>GUIDlg.obj : error LNK2019: 无法解析的外部符号 Syn_SelectIDCard，该符号在函数 "public: void __cdecl CGUIDlg::OnClickedButton2(void)" (?OnClickedButton2@CGUIDlg@@QEAAXXZ) 中被引用
+     1>GUIDlg.obj : error LNK2019: 无法解析的外部符号 Syn_ReadFPMsg，该符号在函数 "public: void __cdecl CGUIDlg::OnClickedButton2(void)" (?OnClickedButton2@CGUIDlg@@QEAAXXZ) 中被引用
+     1>GUIDlg.obj : error LNK2019: 无法解析的外部符号 Syn_FindUSBReader，该符号在函数 "public: void __cdecl CGUIDlg::OnClickedButton1(void)" (?OnClickedButton1@CGUIDlg@@QEAAXXZ) 中被引用
+     1>GUIDlg.obj : error LNK2019: 无法解析的外部符号 Syn_SetPhotoPath，该符号在函数 "public: void __cdecl CGUIDlg::OnClickedButton2(void)" (?OnClickedButton2@CGUIDlg@@QEAAXXZ) 中被引用
+     1>GUIDlg.obj : error LNK2019: 无法解析的外部符号 Syn_SetPhotoName，该符号在函数 "public: void __cdecl CGUIDlg::OnClickedButton2(void)" (?OnClickedButton2@CGUIDlg@@QEAAXXZ) 中被引用
+     1>GUIDlg.obj : error LNK2019: 无法解析的外部符号 Syn_USBHIDGetMaxByte，该符号在函数 "public: void __cdecl CGUIDlg::OnClickedButton1(void)" (?OnClickedButton1@CGUIDlg@@QEAAXXZ) 中被引用
+     1>F:\备份GUI\GUI\x64\Debug\GUI.exe : fatal error LNK1120: 10 个无法解析的外部命令
+     1>已完成生成项目“F:\备份GUI\GUI\GUI\GUI.vcxproj”(Rebuild 个目标)的操作 - 失败。
+
+生成失败。
+
+已用时间 00:00:05.97
