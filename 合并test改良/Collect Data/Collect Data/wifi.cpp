@@ -126,13 +126,17 @@ string Wifi::wifiProcessed()//判断和输出程序      改进后完成的是输出
 	return str;
 }
 
-void  Wifi::wifiProcessed2(map<string,vector<int>> &ss,vector<mapUsed> &dst,ofstream &raw,ofstream &rawPro)//新的方法 完成的是排序后的输出 //输入数据  输出数据  保存原始数据的操作
+void  Wifi::wifiProcessed2(map<string,vector<int>> &ss,vector<mapUsed> &dst,ofstream &raw,ofstream &rawPro,string enterTime)//新的方法 完成的是排序后的输出 //输入数据  输出数据  保存原始数据的操作，还有输入时间
 {
+	//这里要以身份证号作为文件命名，在每个文件中加入日志选项，还有时间输入
+	raw<<enterTime<<" "<<ss.size()<<endl; //时间 Mac个数
+
+	//原始数据输出+处理
 	for (auto const& name:ss)
 	{
 		mapUsed temp;
 		temp.macName=name.first;
-		raw<<name.first<<":"<<endl;
+		raw<<name.first<<" "<<name.second.size()<<" ";//Mac名称 个数 RSSI值
 		temp.num=name.second.size();
 		for (auto const & ttt:name.second) 
 		{
@@ -141,21 +145,21 @@ void  Wifi::wifiProcessed2(map<string,vector<int>> &ss,vector<mapUsed> &dst,ofst
 		raw<<endl;
 		int sumTemp=accumulate(name.second.begin(),name.second.end(),0);
 		temp.avgRssi=sumTemp/int(name.second.size());
+		temp.score=temp.num/(temp.avgRssi==0?1000.0:abs(temp.avgRssi));//考虑有可能出现为0的情况，就把这个替换剔除掉
+		//cout<<temp.score<<"--------------------------------------!!!!!!!!!!!!!!!!"<<endl;
 		dst.push_back(temp);
 	}
-	sort(dst.begin(),dst.end(),[](mapUsed &r1,mapUsed &r2){return r1.avgRssi>r2.avgRssi;}); //最后按大小排序 //最后的排序方式是可以调整的
+
+	//处理后的数据
+	rawPro<<enterTime<<" "<<ss.size()<<endl; //时间 Mac个数
+	sort(dst.begin(),dst.end(),[](mapUsed r1,mapUsed r2){return r1.score>r2.score;}); //最后按大小排序 //最后的排序方式是可以调整的 因为在分数中已经考虑到0的操作，因此在后续的输出时不需再考虑到0的情况
 	for (int it=0;it<dst.size();it++) //将排序好的信息输出
 	{
-		if (dst[it].avgRssi!=0)//剔除0的情况
-		{
-			rawPro<<dst[it].macName<<" "<<dst[it].avgRssi<<" "<<dst[it].num<<endl;
-		}
+			rawPro<<dst[it].macName<<" "<<dst[it].avgRssi<<" "<<dst[it].num<<" "<<dst[it].score<<endl;
 	}
-	//raw.close();
 }
 
 //辅助函数
-
 string Wifi::charTo02XStr(unsigned char input)//将char类型转换成02X字符串型
 {
 	int high,low;
@@ -192,23 +196,6 @@ string Wifi::macToString(unsigned char Mymac[6])//完成将char类型转换成字符串
 		output=output+"_"+charTo02XStr(Mymac[i]);
 	}
 	return output;
-}
-
-void Wifi::getSpecialMac(unsigned char Mymac[6])//转换字符串的形式的函数
-{
-	//unsigned char Mymac[6]={0};//b0,e2,35,2b,da,e0
-	cout<<"输入要特定识别的字符串格式：（请以冒号格式输入，且为小写）"<<endl;
-	scanf("%02x:%02x:%02x:%02x:%02x:%02x",&Mymac[0],&Mymac[1],&Mymac[2],&Mymac[3],&Mymac[4],&Mymac[5]);
-	cout<<"输出转换后形式："<<endl;
-	printf("%hhu,%hhu,%hhu,%hhu,%hhu,%hhu\n",unsigned char(Mymac[0]),Mymac[1],Mymac[2],Mymac[3],Mymac[4],Mymac[5]);
-}
-
-void Wifi::getSpecialRssi(char MyRssi)//转换字符串的形式的函数
-{
-	cout<<"输入最小的dB："<<endl;
-	scanf("%d",MyRssi);
-	cout<<"输出转换后形式："<<endl;
-	printf("%d\n",MyRssi);
 }
 
 char Wifi::MaxRssi(char rssi1,char rssi2)//返回较大的RSSI值，且该值不能能等于0

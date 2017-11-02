@@ -1,23 +1,25 @@
-#include"Kinect.h"
+#include"myKinect.h"
 #include "wifi.h"
+#include "proMySQL.h"
 
 #include <ctime> //用于时间函数
 #include<sstream> //用以类型转换
 #include <fstream>
 #include <iostream>
 
+//可以调整的
 
-
-#define screenFilePath "G://处理后//探针数据//" //存文件的路径
-#define jihuaFilePath "G://处理后//图像数据//"
+#define screenFilePath "F://处理后//探针数据//" //存文件的路径
+#define jihuaFilePath "F://处理后//图像数据//"
 
 DWORD WINAPI MyThreadProc1(LPVOID lpParameter);
 DWORD WINAPI MyThreadProc2(LPVOID lpParameter);
 DWORD WINAPI MyThreadProc3(LPVOID lpParameter);
 
+
+//各线程通信的中间变量
 time_t globTime;
 bool globflag=0;
-
 char recvBuf[1000];
 
 
@@ -27,7 +29,7 @@ string timeIntToTimestampString(time_t input)//time_t转换成timestamp   //!!!!!!!
 {
 	tm *pTmp=localtime(&input);
 	char pStr[15]={};
-	sprintf(pStr,"%d%d%d%d%d%d",pTmp->tm_year+1900,pTmp->tm_mon+1,pTmp->tm_mday+1,pTmp->tm_hour,pTmp->tm_min,pTmp->tm_sec);
+	sprintf(pStr,"%d%02d%02d%02d%02d%02d",pTmp->tm_year+1900,pTmp->tm_mon+1,pTmp->tm_mday+1,pTmp->tm_hour,pTmp->tm_min,pTmp->tm_sec);
 	return string(pStr);
 }
 
@@ -157,26 +159,21 @@ DWORD WINAPI MyThreadProc1(LPVOID lpParameter)
 DWORD WINAPI MyThreadProc2(LPVOID lpParameter)
 {
 
-	////////////////////////////////////////
+	////////////////////////////////////////要把采集和存储分开，数据库的部分单独放在自己的位置上，而且后续应该还具有查询功能。多点碰撞中应该是有查询功能的。
 	proMySQL dataStoreTest;
-	///dataStoreTest.creSmallTable("testTable");
 	dataStoreTest.creBigTable("bigTable");
 	time_t t1=0; //记录传入的历史时刻
 	Wifi wifi;
 	//wifi初始化
 	wifi.InitWifi();
-	bool waitFlag=true;//true代表是处于静止位的，false 代表已经不再等待在处理数据
+	bool waitFlag=true;//true代表是处于静止位的，false 代表已经不再等待在处理数据 //这个是传入的参数
 	bool fileFlag=true;  //true代表文件是可以使用的，即还没有处理
 	//用于存储
-	string str2;  //转换后的路径
-	stringstream sstr2; //转换流
 	ofstream outfileDing,outfileDingRaw;   //存储基本的和处理后的
 
 
 	while(1)
 	{
-
-		//////////////////////////
 		if (globTime!=t1) //根据时间变化的状态位的更新 //默认globTime 初始也为零，一旦开始变化开始更新
 		{
 			t1=globTime;
@@ -195,49 +192,42 @@ DWORD WINAPI MyThreadProc2(LPVOID lpParameter)
 		}
 		else if (waitFlag==false&&fileFlag==true)
 		{
-			//文件初始的操作	
-			/*	sstr2<<t1;
-			sstr2>>str2;*/
-			outfileDing.open(string(screenFilePath)+timeIntToTimestampString(t1)+".txt",ios::app); //处理后的数据!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!应该在后面加入身份证的效果 可以把姜华的一个路径放入，中间通过一个结构体来完成传输
-			outfileDingRaw.open(string(screenFilePath)+timeIntToTimestampString(t1)+"_raw"+".txt",ios::app); //原始数据
+
 			fileFlag=false;
 			cout<<"WIFI开始记录----------------------------------------------------------------"<<endl;
 		}
 		else if (waitFlag==true&&fileFlag==false)
 		{
 			//一次结束后要完成的操作
+			//文件初始的操作	
+			outfileDing.open(string(screenFilePath)+(string(recvBuf+148).size()!=0?string(recvBuf+148):timeIntToTimestampString(t1))+".txt",ios::app); //处理后的数据 如果身份证读到数据就按身份证号打开对应的文件
+			outfileDingRaw.open(string(screenFilePath)+(string(recvBuf+148).size()!=0?string(recvBuf+148):timeIntToTimestampString(t1))+"_raw"+".txt",ios::app); //原始数据
 			vector<Wifi::mapUsed> outdataDing;
-			wifi.wifiProcessed2(wifi.selMapDing,outdataDing,outfileDingRaw,outfileDing);//对数据进行处理并排序,同时把原始数据保存下
-			//输出操作 这里先空上
-			vector<string> outdataDingStrVec;//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!临时
-			for (int i=0;i<outdataDing.size();i++)
-			{
-				outdataDingStrVec.push_back(outdataDing[i].macName);
-			}
-			string tmpStr=string(screenFilePath)+timeIntToTimestampString(t1)+"_raw"+".txt";//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!临时
-			string tmpStr2=string(jihuaFilePath)+timeIntToTimestampString(t1)+".jpg";//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!临时
-			///dataStoreTest.insertSmaTabData("testTable",timeIntToTimestampString(t1),outdataDingStrVec,tmpStr.c_str());//以后写程序要把这个单独摘出来写，减少程序的耦合性
-			dataStoreTest.insertBigTabData("bigTable",timeIntToTimestampString(t1),outdataDingStrVec,tmpStr.c_str(),tmpStr2.c_str(),recvBuf);
-			//memset(recvBuf, 0, sizeof(recvBuf));
+			wifi.wifiProcessed2(wifi.selMapDing,outdataDing,outfileDingRaw,outfileDing,timeIntToTimestampString(t1));//对数据进行处理并排序,同时把原始数据保存下
 			wifi.reSelMacRssi();//将数据清零
 			outfileDing.close();//关闭文件
 			outfileDingRaw.close();//关闭文件
+			//输出操作 这里先空上
+			string tmpStr1=string(screenFilePath)+(string(recvBuf+148).size()!=0?string(recvBuf+148):timeIntToTimestampString(t1))+".txt";//如果没有身份证就使用时间来存储 时间是主键 raw可有可无，就只处理处理后的数据吧
+			string tmpStr2=string(jihuaFilePath)+(string(recvBuf+148).size()!=0?string(recvBuf+148):timeIntToTimestampString(t1))+".jpg";//如果没有身份证就使用时间来存储 时间是主键
+			//现在还没有离开时间，先拿进入时间来抵
+			dataStoreTest.insertBigTabData("bigTable",timeIntToTimestampString(t1),timeIntToTimestampString(t1),tmpStr1.c_str(),tmpStr2.c_str(),recvBuf);//多点碰撞放在插入数据操作中了，因为多点碰撞需要读取文件，因此需要在之前将文件关闭
+			memset(recvBuf, 0, sizeof(recvBuf));//清零身份证数据
+
 			fileFlag=true;
 			cout<<"WIFI记录结束-----------------------------------------------------------"<<endl;
 		}
 	}
-	//closesocket(sockSrv);
-	//WSACleanup();
 	return 0;
 }
 
 
 
-DWORD WINAPI MyThreadProc3(LPVOID lpParameter)
+DWORD WINAPI MyThreadProc3(LPVOID lpParameter)//负责和身份证的通信
 {
 	//socket通信
 	WSADATA wsaData;
-	int port = 5099;
+	int port = 5099;     //与身份证的端口号保持一致
 
 	char buf[] = "0"; 
 
@@ -267,7 +257,6 @@ DWORD WINAPI MyThreadProc3(LPVOID lpParameter)
 
 	SOCKADDR_IN addrClient;
 	int len = sizeof(SOCKADDR);
-	//memset(recvBuf, 0, sizeof(recvBuf));
 
 	while (1)
 	{
@@ -278,8 +267,6 @@ DWORD WINAPI MyThreadProc3(LPVOID lpParameter)
 			printf("Accept failed:%d", WSAGetLastError());
 		}
 
-		//printf("Accept client IP:[%s]\n", inet_ntoa(addrClient.sin_addr));
-
 		//发送数据
 		int iSend = send(sockConn, buf, sizeof(buf) , 0);
 		if(iSend == SOCKET_ERROR){
@@ -288,8 +275,6 @@ DWORD WINAPI MyThreadProc3(LPVOID lpParameter)
 
 		// 		//接收数据
 		recv(sockConn, recvBuf, sizeof(recvBuf), 0);
-		//printf("%d %s\n", tTmp,recvBuf);
-		//std::cout<<std::string(recvBuf+58);
 		closesocket(sockConn);
 	}
 	return 0;
